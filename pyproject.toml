@@ -76,7 +76,7 @@ exclude_lines = [
     "if TYPE_CHECKING:",
     "raise AssertionError",
     "raise NotImplementedError",
-    "if __name__ == .__main__.:",
+    "if __name__ == \"__main__\":",
 ]
 
 [tool.mypy]
