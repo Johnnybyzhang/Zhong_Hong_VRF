@@ -427,7 +427,7 @@ class ZhongHongClient:
 
                     offset += 1  # Check every possible starting position
 
-            except TimeoutError:
+            except socket.timeout:
                 _LOGGER.debug("TCP socket timeout, retrying...")
                 continue
             except OSError as sock_ex:
