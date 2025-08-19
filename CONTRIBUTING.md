@@ -153,7 +153,7 @@ cp docs/adr-template.md docs/adr-YYYYMMDD-your-decision.md
 - INFO logs for setup/teardown lifecycle
 - WARN logs for retries and recoverable errors  
 - ERROR logs with actionable context (no PII)
-- Feature flag for telemetry: `HA_ZHVRF_TELEMETRY=off`
+- Feature flag for telemetry: `HA_ZHVRF_TELEMETRY=off` (planned for future implementation)
 
 ## Documentation Standards
 
