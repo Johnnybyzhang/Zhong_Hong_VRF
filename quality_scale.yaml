@@ -9,7 +9,6 @@ rules:
     comment: Missing branding assets (icons/logos) - need to add to repository
   common-modules: done
   config-flow-test-coverage:
-    status: todo
     status: done
     comment: Config flow tests have been added
   config-flow: done
@@ -29,8 +28,7 @@ rules:
   entity-unique-id: done
   has-entity-name: done
   runtime-data:
-    status: todo
-    comment: Using legacy hass.data pattern instead of ConfigEntry.runtime_data
+    status: done
   test-before-configure: done
   test-before-setup: done
   unique-config-entry: done
