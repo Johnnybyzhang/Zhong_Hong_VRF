@@ -11,7 +11,8 @@ rules:
   config-flow-test-coverage: done
   comment: Comprehensive test suite added with 95%+ coverage for config flow
   config-flow: done
-  data_description: done
+  data_description:
+    status: done
     comment: All config fields have proper data_description in strings.json
   dependency-transparency: done
   docs-actions:
