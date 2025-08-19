@@ -29,7 +29,6 @@ rules:
   has-entity-name: done
   runtime-data:
     status: done
-    comment: Using legacy hass.data pattern instead of ConfigEntry.runtime_data
   test-before-configure: done
   test-before-setup: done
   unique-config-entry: done
