@@ -46,8 +46,11 @@ class ZhongHongClient:
         # Version tracking for device state
         self._version_counter = 0
 
-        self.devices: dict[str, dict[str, Any]] = {}
-        self.device_info: dict[str, str] = {}
+        # Track connection status for availability
+        self._tcp_connected = True
+
+        self.devices: Dict[str, Dict[str, Any]] = {}
+        self.device_info: Dict[str, str] = {}
 
     def _next_version(self) -> int:
         """Return the next monotonic version number."""
@@ -107,13 +110,25 @@ class ZhongHongClient:
             except Exception as ex:
                 _LOGGER.error("Error in update callback: %s", ex)
 
-    async def _async_get(self, url: str) -> dict[str, Any] | None:
+
+    @property
+    def is_tcp_connected(self) -> bool:
+        """Return TCP connection state."""
+        return self._tcp_connected
+
+    async def _async_get(self, url: str) -> Optional[Dict[str, Any]]:
         """Make HTTP/0.9 GET request using raw socket for compatibility."""
         try:
             return await self._async_get_http09(url)
+        except asyncio.TimeoutError:
+            _LOGGER.error("HTTP/0.9 request timeout")
+            return None
+        except OSError as ex:
+            _LOGGER.error("HTTP/0.9 socket error: %s", ex)
+            raise ConnectionError from ex
         except Exception as ex:
             _LOGGER.error("HTTP/0.9 request failed: %s", ex)
-            return None
+            raise ConnectionError from ex
 
     async def _async_get_http09(self, url: str) -> dict[str, Any] | None:
         """Use raw socket for HTTP/0.9 requests."""
@@ -131,6 +146,7 @@ class ZhongHongClient:
             path,
         )
 
+        writer = None
         try:
             # Create socket connection
             reader, writer = await asyncio.wait_for(asyncio.open_connection(host, port), timeout=10)
@@ -161,9 +177,6 @@ class ZhongHongClient:
                     break
                 response_data += chunk
 
-            writer.close()
-            await writer.wait_closed()
-
             # Parse response (skip HTTP headers)
             response_text = response_data.decode("utf-8", errors="ignore")
 
@@ -183,13 +196,13 @@ class ZhongHongClient:
             result = json.loads(json_str)
             _LOGGER.debug("Successfully parsed HTTP/0.9 response: %s", result)
             return result
-
-        except TimeoutError:
-            _LOGGER.error("HTTP/0.9 request timeout")
-            return None
-        except Exception as ex:
-            _LOGGER.error("HTTP/0.9 socket error: %s", ex)
-            return None
+        finally:
+            if writer is not None:
+                writer.close()
+                try:
+                    await writer.wait_closed()
+                except Exception:  # pragma: no cover - best effort
+                    pass
 
     async def async_get_devices(self) -> list[dict[str, Any]]:
         """Get all devices via HTTP API by scanning all pages."""
@@ -303,7 +316,12 @@ class ZhongHongClient:
             fan,
         )
 
-        response = await self._async_get(url)
+        try:
+            response = await self._async_get(url)
+        except ConnectionError as ex:
+            _LOGGER.error("Control request failed: %s", ex)
+            return False
+
         success = response is not None and response.get("err") == 0
 
         _LOGGER.debug("Cmd result: success=%s, response=%s", success, response)
@@ -324,6 +342,7 @@ class ZhongHongClient:
     def stop_tcp_listener(self) -> None:
         """Stop TCP socket listener."""
         self._listening = False
+        self._tcp_connected = False
         if self._tcp_socket:
             self._tcp_socket.close()
             self._tcp_socket = None
@@ -356,9 +375,13 @@ class ZhongHongClient:
                 self._tcp_socket.settimeout(10)
                 try:
                     self._tcp_socket.connect((self.host, self.port))
-                    _LOGGER.info("TCP connected to %s:%s", self.host, self.port)
+                    _LOGGER.info(
+                        "TCP connected to %s:%s", self.host, self.port
+                    )
+                    self._tcp_connected = True
                 except Exception as connect_ex:
                     _LOGGER.error("TCP connect failed: %s", connect_ex)
+                    self._tcp_connected = False
                     time.sleep(5)
                     continue
 
@@ -432,10 +455,12 @@ class ZhongHongClient:
                 continue
             except OSError as sock_ex:
                 _LOGGER.error("TCP socket error: %s", sock_ex)
+                self._tcp_connected = False
                 if self._tcp_socket:
                     self._tcp_socket.close()
                     self._tcp_socket = None
                 time.sleep(5)
             except Exception as ex:
                 _LOGGER.error("TCP listener error: %s", ex)
+                self._tcp_connected = False
                 time.sleep(5)
