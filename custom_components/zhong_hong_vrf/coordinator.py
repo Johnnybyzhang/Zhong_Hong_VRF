@@ -6,9 +6,9 @@ from datetime import timedelta
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_HOST,
+    CONF_PASSWORD,
     CONF_PORT,
     CONF_USERNAME,
-    CONF_PASSWORD,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import (
@@ -56,9 +56,7 @@ class ZhongHongDataUpdateCoordinator(DataUpdateCoordinator):
                 "device_info": self.client.device_info,
             }
         except Exception as ex:
-            raise UpdateFailed(
-                f"Failed to update Zhong Hong VRF data: {ex}"
-            ) from ex
+            raise UpdateFailed(f"Failed to update Zhong Hong VRF data: {ex}") from ex
 
     async def async_shutdown(self) -> None:
         """Shutdown the coordinator."""
