@@ -9,8 +9,8 @@ rules:
     comment: Missing branding assets (icons/logos) - need to add to repository
   common-modules: done
   config-flow-test-coverage:
-    status: todo
-    comment: No test files for config flow - need to add tests
+    status: done
+    comment: Config flow tests have been added
   config-flow: done
   data_description:
     status: todo
