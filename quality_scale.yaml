@@ -9,7 +9,7 @@ rules:
     comment: Missing branding assets (icons/logos) - need to add to repository
   common-modules: done
   config-flow-test-coverage: done
-    comment: Comprehensive test suite added with 95%+ coverage for config flow
+  comment: Comprehensive test suite added with 95%+ coverage for config flow
   config-flow: done
   data_description: done
     comment: All config fields have proper data_description in strings.json
