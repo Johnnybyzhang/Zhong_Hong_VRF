@@ -8,6 +8,7 @@ from homeassistant.components.climate import (
     ClimateEntityFeature,
     HVACMode,
 )
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
@@ -15,32 +16,31 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
-    DOMAIN,
     AC_MODE_COOL,
+    API_TO_HA_FAN_MAPPING,
+    API_TO_HA_MODE_MAPPING,
+    DEFAULT_MAX_TEMP,
+    DEFAULT_MIN_TEMP,
+    DOMAIN,
     FAN_SPEED_AUTO,
+    FAN_SPEED_HIGH,
     FAN_SPEED_LOW,
     FAN_SPEED_MEDIUM,
-    FAN_SPEED_HIGH,
-    API_TO_HA_MODE_MAPPING,
-    API_TO_HA_FAN_MAPPING,
     HA_TO_API_MODE_MAPPING,
-    DEFAULT_MIN_TEMP,
-    DEFAULT_MAX_TEMP,
 )
 from .coordinator import ZhongHongDataUpdateCoordinator
+from .runtime_data import ZhongHongRuntimeData
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: dict[str, Any],
+    entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up Zhong Hong VRF climate entities."""
-    coordinator: ZhongHongDataUpdateCoordinator = hass.data[DOMAIN][
-        entry.entry_id
-    ]
+    runtime_data: ZhongHongRuntimeData = entry.runtime_data
+    coordinator = runtime_data.coordinator
 
     entities = []
     for device_key, device_data in coordinator.data["devices"].items():
@@ -122,12 +122,11 @@ class ZhongHongClimate(CoordinatorEntity, ClimateEntity):
         """Update device data from either the coordinator, TCP, or manual call."""
 
         _LOGGER.debug(
-            "Processing %s update for %s with version %s", 
+            "Processing %s update for %s with version %s",
             source,
             self.name,
             device_data.get("_version"),
         )
-
 
         current_version = self.device_data.get("_version", 0)
         new_version = device_data.get("_version", current_version)
@@ -146,12 +145,8 @@ class ZhongHongClimate(CoordinatorEntity, ClimateEntity):
         _LOGGER.debug("Device data update for %s: %s", self.name, device_data)
 
         # Log temperature range for debugging using configured options
-        lowest = self.coordinator.config_entry.options.get(
-            "min_temp", DEFAULT_MIN_TEMP
-        )
-        highest = self.coordinator.config_entry.options.get(
-            "max_temp", DEFAULT_MAX_TEMP
-        )
+        lowest = self.coordinator.config_entry.options.get("min_temp", DEFAULT_MIN_TEMP)
+        highest = self.coordinator.config_entry.options.get("max_temp", DEFAULT_MAX_TEMP)
         _LOGGER.debug(
             "Temperature range for %s: lowest=%.1f, highest=%.1f, current_set=%s, current_in=%s",
             self.name,
@@ -190,9 +185,7 @@ class ZhongHongClimate(CoordinatorEntity, ClimateEntity):
             self._attr_hvac_mode = HVACMode.OFF
         else:
             ac_mode = int(device_data.get("mode", AC_MODE_COOL))
-            self._attr_hvac_mode = API_TO_HA_MODE_MAPPING.get(
-                ac_mode, HVACMode.COOL
-            )
+            self._attr_hvac_mode = API_TO_HA_MODE_MAPPING.get(ac_mode, HVACMode.COOL)
 
         # Fan mode
         fan_speed = int(device_data.get("fan", 0))
@@ -207,12 +200,8 @@ class ZhongHongClimate(CoordinatorEntity, ClimateEntity):
     @property
     def min_temp(self) -> float:
         """Return the minimum temperature."""
-        min_val = self.coordinator.config_entry.options.get(
-            "min_temp", DEFAULT_MIN_TEMP
-        )
-        max_val = self.coordinator.config_entry.options.get(
-            "max_temp", DEFAULT_MAX_TEMP
-        )
+        min_val = self.coordinator.config_entry.options.get("min_temp", DEFAULT_MIN_TEMP)
+        max_val = self.coordinator.config_entry.options.get("max_temp", DEFAULT_MAX_TEMP)
         if min_val >= max_val:
             _LOGGER.warning(
                 "Invalid temperature range in options: min=%.1f, max=%.1f, using defaults",
@@ -225,12 +214,8 @@ class ZhongHongClimate(CoordinatorEntity, ClimateEntity):
     @property
     def max_temp(self) -> float:
         """Return the maximum temperature."""
-        max_val = self.coordinator.config_entry.options.get(
-            "max_temp", DEFAULT_MAX_TEMP
-        )
-        min_val = self.coordinator.config_entry.options.get(
-            "min_temp", DEFAULT_MIN_TEMP
-        )
+        max_val = self.coordinator.config_entry.options.get("max_temp", DEFAULT_MAX_TEMP)
+        min_val = self.coordinator.config_entry.options.get("min_temp", DEFAULT_MIN_TEMP)
         if max_val <= min_val:
             _LOGGER.warning(
                 "Invalid temperature range in options: min=%.1f, max=%.1f, using defaults",
@@ -335,8 +320,6 @@ class ZhongHongClimate(CoordinatorEntity, ClimateEntity):
             self._update_device_data(self.device_data, source="manual")
             # Immediately write the state to Home Assistant
             self.async_write_ha_state()
-
-
 
             _LOGGER.debug(
                 "Updated %s: state=%s, mode=%s, temp_set=%s, " "fan=%s",
