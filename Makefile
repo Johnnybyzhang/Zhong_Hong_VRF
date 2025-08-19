@@ -37,7 +37,10 @@ test:
 audit:
 	@echo "🔒 Running security audit..."
 	pip-audit --desc --fix-dry-run
-	bandit -r custom_components -f json -o bandit-report.json || echo "⚠️  Bandit found issues, check bandit-report.json"
+	@if ! bandit -r custom_components -f json -o bandit-report.json; then \
+		echo "⚠️  Bandit found issues, check bandit-report.json"; \
+		exit 1; \
+	fi
 	@echo "✅ Security audit completed!"
 
 # Start development environment
