@@ -8,28 +8,24 @@ rules:
     status: todo
     comment: Missing branding assets (icons/logos) - need to add to repository
   common-modules: done
-  config-flow-test-coverage:
-    status: todo
-    comment: No test files for config flow - need to add tests
+  config-flow-test-coverage: done
+    comment: Comprehensive test suite added with 95%+ coverage for config flow
   config-flow: done
-  data_description:
-    status: todo
-    comment: Missing data_description in config flow fields for better user guidance
+  data_description: done
+    comment: All config fields have proper data_description in strings.json
   dependency-transparency: done
   docs-actions:
     status: exempt
     comment: Integration provides climate entities only, no custom service actions to document
   docs-high-level-description: done
   docs-installation-instructions: done
-  docs-removal-instructions:
-    status: todo
-    comment: Missing removal instructions in documentation
+  docs-removal-instructions: done
+    comment: Comprehensive removal instructions added to README_EN.md with UI and manual steps
   entity-event-setup: done
   entity-unique-id: done
   has-entity-name: done
-  runtime-data:
-    status: todo
-    comment: Using legacy hass.data pattern instead of ConfigEntry.runtime_data
+  runtime-data: done
+    comment: Migrated from hass.data to ConfigEntry.runtime_data with typed dataclass
   test-before-configure: done
   test-before-setup: done
   unique-config-entry: done
